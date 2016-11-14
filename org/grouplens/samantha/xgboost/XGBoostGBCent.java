@@ -2,14 +2,12 @@ package org.grouplens.samantha.xgboost;
 
 import org.grouplens.samantha.modeler.boosting.AbstractGBCent;
 import org.grouplens.samantha.modeler.boosting.GBCentLearningInstance;
-import org.grouplens.samantha.modeler.common.LearningData;
 import org.grouplens.samantha.modeler.common.LearningInstance;
 import org.grouplens.samantha.modeler.common.PredictiveModel;
 import org.grouplens.samantha.modeler.featurizer.Feature;
 import org.grouplens.samantha.modeler.featurizer.FeatureExtractor;
 import org.grouplens.samantha.modeler.space.IndexSpace;
 import org.grouplens.samantha.modeler.svdfeature.SVDFeatureModel;
-import org.grouplens.samantha.modeler.featurizer.StandardLearningInstance;
 
 import java.util.List;
 
@@ -34,10 +32,6 @@ public class XGBoostGBCent extends AbstractGBCent implements PredictiveModel {
             }
         }
         return pred;
-    }
-
-    public LearningData getLearningData(List<StandardLearningInstance> treeInstances) {
-        return new XGBoostData(treeInstances);
     }
 
     public PredictiveModel getNumericalTree(int treeIdx) {
