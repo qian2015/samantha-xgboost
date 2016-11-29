@@ -7,7 +7,7 @@ import org.grouplens.samantha.modeler.common.PredictiveModel;
 import org.grouplens.samantha.modeler.featurizer.Feature;
 import org.grouplens.samantha.modeler.featurizer.FeatureExtractor;
 import org.grouplens.samantha.modeler.space.IndexSpace;
-import org.grouplens.samantha.modeler.svdfeature.SVDFeatureModel;
+import org.grouplens.samantha.modeler.svdfeature.SVDFeature;
 
 import java.util.List;
 
@@ -15,8 +15,8 @@ public class XGBoostGBCent extends AbstractGBCent implements PredictiveModel {
 
     public XGBoostGBCent(List<FeatureExtractor> treeExtractors,
                          List<String> treeFeatures, String labelName, String weightName,
-                         IndexSpace indexSpace, SVDFeatureModel svdFeatureModel) {
-        super(indexSpace, treeExtractors, treeFeatures, labelName, weightName, svdFeatureModel);
+                         IndexSpace indexSpace, SVDFeature svdFeature) {
+        super(indexSpace, treeExtractors, treeFeatures, labelName, weightName, svdFeature);
     }
 
     public double predict(LearningInstance ins) {

@@ -4,8 +4,8 @@ import org.grouplens.samantha.modeler.featurizer.FeatureExtractor;
 import org.grouplens.samantha.modeler.solver.ObjectiveFunction;
 import org.grouplens.samantha.modeler.space.IndexSpace;
 import org.grouplens.samantha.modeler.space.SpaceProducer;
-import org.grouplens.samantha.modeler.svdfeature.SVDFeatureModel;
-import org.grouplens.samantha.modeler.svdfeature.SVDFeatureModelProducer;
+import org.grouplens.samantha.modeler.svdfeature.SVDFeature;
+import org.grouplens.samantha.modeler.svdfeature.SVDFeatureProducer;
 import org.grouplens.samantha.modeler.tree.TreeKey;
 
 import javax.inject.Inject;
@@ -30,8 +30,8 @@ public class XGBoostGBCentProducer {
                                       int factDim, ObjectiveFunction objectiveFunction) {
         IndexSpace indexSpace = spaceProducer.getIndexSpace(modelName);
         indexSpace.requestKeyMap(TreeKey.TREE.get());
-        SVDFeatureModelProducer svdfeaProducer = new SVDFeatureModelProducer(spaceProducer);
-        SVDFeatureModel svdfeaModel = svdfeaProducer.createSVDFeatureModel(modelName, biasFeas, ufactFeas,
+        SVDFeatureProducer svdfeaProducer = new SVDFeatureProducer(spaceProducer);
+        SVDFeature svdfeaModel = svdfeaProducer.createSVDFeatureModel(modelName, biasFeas, ufactFeas,
                 ifactFeas, labelName, weightName, svdfeaExtractors, factDim, objectiveFunction);
         return new XGBoostGBCent(treeExtractors, treeFeas, labelName, weightName,
                 indexSpace, svdfeaModel);
@@ -39,7 +39,7 @@ public class XGBoostGBCentProducer {
 
     public XGBoostGBCent createGBCentWithSVDFeatureModel(String modelName, List<String> treeFeas,
                                                          List<FeatureExtractor> treeExtractors,
-                                                         SVDFeatureModel svdfeaModel) {
+                                                         SVDFeature svdfeaModel) {
         IndexSpace indexSpace = spaceProducer.getIndexSpace(modelName);
         indexSpace.requestKeyMap(TreeKey.TREE.get());
         String labelName = svdfeaModel.getLabelName();

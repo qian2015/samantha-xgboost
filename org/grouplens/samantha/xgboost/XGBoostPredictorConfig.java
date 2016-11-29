@@ -3,21 +3,19 @@ package org.grouplens.samantha.xgboost;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.grouplens.samantha.modeler.common.LearningData;
 import org.grouplens.samantha.modeler.featurizer.FeatureExtractor;
-import org.grouplens.samantha.server.common.ModelOperation;
-import org.grouplens.samantha.server.common.ModelService;
+import org.grouplens.samantha.server.common.AbstractModelManager;
+import org.grouplens.samantha.server.common.ModelManager;
 import org.grouplens.samantha.server.config.ConfigKey;
 import org.grouplens.samantha.server.expander.EntityExpander;
 import org.grouplens.samantha.server.expander.ExpanderUtilities;
 import org.grouplens.samantha.server.featurizer.FeatureExtractorConfig;
 import org.grouplens.samantha.server.featurizer.FeatureExtractorListConfigParser;
 import org.grouplens.samantha.server.featurizer.FeaturizerConfigParser;
-import org.grouplens.samantha.server.io.IOUtilities;
 import org.grouplens.samantha.server.io.RequestContext;
 import org.grouplens.samantha.server.predictor.PredictiveModelBasedPredictor;
 import org.grouplens.samantha.server.predictor.Predictor;
 import org.grouplens.samantha.server.predictor.PredictorConfig;
 import org.grouplens.samantha.server.predictor.PredictorUtilities;
-import org.grouplens.samantha.server.retriever.RetrieverUtilities;
 import play.Configuration;
 import play.inject.Injector;
 
@@ -82,65 +80,43 @@ public class XGBoostPredictorConfig implements PredictorConfig {
                 predictorConfig.getString("serializedKey"), predictorConfig);
     }
 
-    private XGBoostModel createNewModel(RequestContext requestContext) {
-        List<FeatureExtractor> featureExtractors = new ArrayList<>();
-        for (FeatureExtractorConfig feaExtConfig : feaExtConfigs) {
-            featureExtractors.add(feaExtConfig.getFeatureExtractor(requestContext));
-        }
-        XGBoostModelProducer producer = injector.instanceOf(XGBoostModelProducer.class);
-        XGBoostModel model = producer.createXGBoostModel(modelName, featureExtractors, features,
-                labelName, weightName);
-        return model;
-    }
+    private class XGBoostModelManager extends AbstractModelManager {
 
-    private XGBoostModel getModel(ModelService modelService, String engineName, RequestContext requestContext) {
-        if (modelService.hasModel(engineName, modelName)) {
-            return (XGBoostModel) modelService.getModel(engineName, modelName);
-        } else {
-            XGBoostModel model = createNewModel(requestContext);
-            modelService.setModel(engineName, modelName, model);
+        public XGBoostModelManager(String modelName, String modelFile, Injector injector) {
+            super(injector, modelName, modelFile);
+        }
+
+        public Object createModel(RequestContext requestContext) {
+            List<FeatureExtractor> featureExtractors = new ArrayList<>();
+            for (FeatureExtractorConfig feaExtConfig : feaExtConfigs) {
+                featureExtractors.add(feaExtConfig.getFeatureExtractor(requestContext));
+            }
+            XGBoostModelProducer producer = injector.instanceOf(XGBoostModelProducer.class);
+            XGBoostModel model = producer.createXGBoostModel(modelName, featureExtractors, features,
+                    labelName, weightName);
+            return model;
+        }
+
+        public Object buildModel(Object model, RequestContext requestContext) {
+            JsonNode reqBody = requestContext.getRequestBody();
+            XGBoostModel xgBoost = (XGBoostModel) model;
+            LearningData learnData = PredictorUtilities.getLearningData(xgBoost, requestContext,
+                    reqBody.get("learningDaoConfig"), daoConfigs,
+                    expandersConfig, injector, true, serializedKey, insName, labelName, weightName);
+            LearningData validData = null;
+            if (reqBody.has("validationDaoConfig")) {
+                validData = PredictorUtilities.getLearningData(xgBoost, requestContext,
+                        reqBody.get("validationDaoConfig"), daoConfigs,
+                        expandersConfig, injector, true, serializedKey, insName, labelName, weightName);
+            }
+            method.learn(xgBoost, learnData, validData);
             return model;
         }
     }
 
-    private XGBoostModel buildModel(RequestContext requestContext,
-                                      ModelService modelService) {
-        XGBoostModel model = createNewModel(requestContext);
-        JsonNode reqBody = requestContext.getRequestBody();
-        LearningData learnData = PredictorUtilities.getLearningData(model, requestContext,
-                reqBody.get("learningDaoConfig"), daoConfigs,
-                expandersConfig, injector, true, serializedKey, insName, labelName, weightName);
-        LearningData validData = null;
-        if (reqBody.has("validationDaoConfig")) {
-            validData = PredictorUtilities.getLearningData(model, requestContext,
-                    reqBody.get("validationDaoConfig"), daoConfigs,
-                    expandersConfig, injector, true, serializedKey, insName, labelName, weightName);
-        }
-        method.learn(model, learnData, validData);
-        modelService.setModel(requestContext.getEngineName(), modelName, model);
-        return model;
-    }
-
     public Predictor getPredictor(RequestContext requestContext) {
-        String engineName = requestContext.getEngineName();
-        ModelService modelService = injector.instanceOf(ModelService.class);
-        JsonNode reqBody = requestContext.getRequestBody();
-        boolean toBuild = IOUtilities.whetherModelOperation(modelName, ModelOperation.BUILD, reqBody);
-        XGBoostModel model;
-        if (toBuild) {
-            model = buildModel(requestContext, modelService);
-        } else {
-            model = getModel(modelService, engineName, requestContext);
-        }
-        boolean toLoad = IOUtilities.whetherModelOperation(modelName, ModelOperation.LOAD, reqBody);
-        if (toLoad) {
-            model = (XGBoostModel) RetrieverUtilities.loadModel(modelService, engineName, modelName,
-                    modelFile);
-        }
-        boolean toDump = IOUtilities.whetherModelOperation(modelName, ModelOperation.DUMP, reqBody);
-        if (toDump) {
-            RetrieverUtilities.dumpModel(model, modelFile);
-        }
+        ModelManager modelManager = new XGBoostModelManager(modelName, modelFile, injector);
+        XGBoostGBCent model = (XGBoostGBCent) modelManager.manage(requestContext);
         List<EntityExpander> entityExpanders = ExpanderUtilities.getEntityExpanders(requestContext,
                 expandersConfig, injector);
         return new PredictiveModelBasedPredictor(config, model, model,
