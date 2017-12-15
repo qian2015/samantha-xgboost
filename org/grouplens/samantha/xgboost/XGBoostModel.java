@@ -12,7 +12,7 @@ import org.grouplens.samantha.modeler.featurizer.Featurizer;
 import org.grouplens.samantha.modeler.space.IndexSpace;
 import org.grouplens.samantha.modeler.featurizer.StandardFeaturizer;
 import org.grouplens.samantha.modeler.featurizer.StandardLearningInstance;
-import org.grouplens.samantha.server.exception.InvalidRequestException;
+import org.grouplens.samantha.server.exception.BadRequestException;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -26,20 +26,24 @@ public class XGBoostModel implements PredictiveModel, Featurizer {
 
     public XGBoostModel(IndexSpace indexSpace, List<FeatureExtractor> featureExtractors,
                         List<String> features, String labelName, String weightName) {
-        this.featurizer = new StandardFeaturizer(indexSpace, featureExtractors, features, labelName, weightName);
+        this.featurizer = new StandardFeaturizer(indexSpace,
+                featureExtractors, features, null, labelName, weightName);
     }
 
-    public double predict(LearningInstance ins) {
+    public double[] predict(LearningInstance ins) {
+        double[] preds = new double[1];
         if (booster == null) {
-            return 0.0;
+            preds[0] = 0.0;
+            return preds;
         } else {
             List<LabeledPoint> list = new ArrayList<>(1);
             list.add(((XGBoostInstance) ins).getLabeledPoint());
             try {
                 DMatrix data = new DMatrix(list.iterator(), null);
-                return booster.predict(data)[0][0];
+                preds[0] = booster.predict(data)[0][0];
+                return preds;
             } catch (XGBoostError e) {
-                throw new InvalidRequestException(e);
+                throw new BadRequestException(e);
             }
         }
     }
@@ -56,7 +60,7 @@ public class XGBoostModel implements PredictiveModel, Featurizer {
         try {
             this.booster.saveModel(modelFile);
         } catch (XGBoostError e) {
-            throw new InvalidRequestException(e);
+            throw new BadRequestException(e);
         }
     }
 
@@ -65,7 +69,9 @@ public class XGBoostModel implements PredictiveModel, Featurizer {
             ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(modelFile));
             this.booster = (Booster) inputStream.readUnshared();
         } catch (IOException | ClassNotFoundException e) {
-            throw new InvalidRequestException(e);
+            throw new BadRequestException(e);
         }
     }
+
+    public void publishModel() {}
 }

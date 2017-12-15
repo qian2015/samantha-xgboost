@@ -7,7 +7,7 @@ import ml.dmlc.xgboost4j.java.XGBoostError;
 import org.grouplens.samantha.modeler.common.LearningData;
 import org.grouplens.samantha.modeler.common.LearningMethod;
 import org.grouplens.samantha.modeler.common.PredictiveModel;
-import org.grouplens.samantha.server.exception.InvalidRequestException;
+import org.grouplens.samantha.server.exception.BadRequestException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -32,7 +32,7 @@ public class XGBoostMethod implements LearningMethod {
             XGBoostModel boostModel = (XGBoostModel) model;
             boostModel.setXGBooster(booster);
         } catch (XGBoostError e) {
-            throw new InvalidRequestException(e);
+            throw new BadRequestException(e);
         }
     }
 }

@@ -16,25 +16,29 @@ public class XGBoostGBCent extends AbstractGBCent implements PredictiveModel {
     public XGBoostGBCent(List<FeatureExtractor> treeExtractors,
                          List<String> treeFeatures, String labelName, String weightName,
                          IndexSpace indexSpace, SVDFeature svdFeature) {
-        super(indexSpace, treeExtractors, treeFeatures, labelName, weightName, svdFeature);
+        super(indexSpace, treeExtractors, treeFeatures, labelName, weightName, null, svdFeature);
     }
 
-    public double predict(LearningInstance ins) {
+    public double[] predict(LearningInstance ins) {
         GBCentLearningInstance centIns = (GBCentLearningInstance) ins;
-        double pred = svdfeaModel.predict(centIns.getSvdfeaIns());
+        double pred = svdfeaModel.predict(centIns.getSvdfeaIns())[0];
         for (Feature feature : centIns.getSvdfeaIns().getBiasFeatures()) {
             int idx = feature.getIndex();
             if (idx < trees.size()) {
                 PredictiveModel tree = trees.get(idx);
                 if (tree != null) {
-                    pred += tree.predict(new XGBoostInstance(centIns.getTreeIns()));
+                    pred += tree.predict(new XGBoostInstance(centIns.getTreeIns()))[0];
                 }
             }
         }
-        return pred;
+        double[] preds = new double[1];
+        preds[0] = pred;
+        return preds;
     }
 
     public PredictiveModel getNumericalTree(int treeIdx) {
         return new XGBoostModel(indexSpace, featureExtractors, features, labelName, weightName);
     }
+
+    public void publishModel() {}
 }

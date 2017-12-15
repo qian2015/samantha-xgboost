@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.grouplens.samantha.modeler.common.LearningData;
 import org.grouplens.samantha.modeler.common.LearningMethod;
 import org.grouplens.samantha.modeler.featurizer.FeatureExtractor;
+import org.grouplens.samantha.modeler.space.SpaceMode;
 import org.grouplens.samantha.modeler.svdfeature.SVDFeature;
 import org.grouplens.samantha.server.common.AbstractModelManager;
 import org.grouplens.samantha.server.common.ModelManager;
@@ -86,10 +87,10 @@ public class XGBoostGBCentPredictorConfig implements PredictorConfig {
     private class XGBoostGBCentModelManager extends AbstractModelManager {
 
         public XGBoostGBCentModelManager(String modelName, String modelFile, Injector injector) {
-            super(injector, modelName, modelFile);
+            super(injector, modelName, modelFile, null);
         }
 
-        public Object createModel(RequestContext requestContext) {
+        public Object createModel(RequestContext requestContext, SpaceMode spaceMode) {
             List<FeatureExtractor> featureExtractors = new ArrayList<>();
             for (FeatureExtractorConfig feaExtConfig : treeExtractorsConfig) {
                 featureExtractors.add(feaExtConfig.getFeatureExtractor(requestContext));
@@ -100,7 +101,8 @@ public class XGBoostGBCentPredictorConfig implements PredictorConfig {
             SVDFeature svdfeaModel = (SVDFeature) modelService.getModel(requestContext.getEngineName(),
                     svdfeaModelName);
             XGBoostGBCentProducer producer = injector.instanceOf(XGBoostGBCentProducer.class);
-            XGBoostGBCent model = producer.createGBCentWithSVDFeatureModel(modelName, treeFeatures,
+            XGBoostGBCent model = producer.createGBCentWithSVDFeatureModel(modelName,
+                    SpaceMode.DEFAULT, treeFeatures,
                     featureExtractors, svdfeaModel);
             return model;
         }
@@ -110,12 +112,12 @@ public class XGBoostGBCentPredictorConfig implements PredictorConfig {
             XGBoostGBCent gbCent = (XGBoostGBCent) model;
             LearningData data = PredictorUtilities.getLearningData(gbCent, requestContext,
                     reqBody.get("learningDaoConfig"), daosConfig, expandersConfig, injector, true,
-                    serializedKey, insName, labelName, weightName);
+                    serializedKey, insName, labelName, weightName, null);
             LearningData valid = null;
             if (reqBody.has("validationDaoConfig"))  {
                 valid = PredictorUtilities.getLearningData(gbCent, requestContext,
                         reqBody.get("validationDaoConfig"), daosConfig, expandersConfig, injector, false,
-                        serializedKey, insName, labelName, weightName);
+                        serializedKey, insName, labelName, weightName, null);
             }
             LearningMethod method = PredictorUtilities.getLearningMethod(methodConfig, injector, requestContext);
             method.learn(gbCent, data, valid);

@@ -3,6 +3,7 @@ package org.grouplens.samantha.xgboost;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.grouplens.samantha.modeler.common.LearningData;
 import org.grouplens.samantha.modeler.featurizer.FeatureExtractor;
+import org.grouplens.samantha.modeler.space.SpaceMode;
 import org.grouplens.samantha.server.common.AbstractModelManager;
 import org.grouplens.samantha.server.common.ModelManager;
 import org.grouplens.samantha.server.config.ConfigKey;
@@ -83,16 +84,17 @@ public class XGBoostPredictorConfig implements PredictorConfig {
     private class XGBoostModelManager extends AbstractModelManager {
 
         public XGBoostModelManager(String modelName, String modelFile, Injector injector) {
-            super(injector, modelName, modelFile);
+            super(injector, modelName, modelFile, null);
         }
 
-        public Object createModel(RequestContext requestContext) {
+        public Object createModel(RequestContext requestContext, SpaceMode spaceMode) {
             List<FeatureExtractor> featureExtractors = new ArrayList<>();
             for (FeatureExtractorConfig feaExtConfig : feaExtConfigs) {
                 featureExtractors.add(feaExtConfig.getFeatureExtractor(requestContext));
             }
             XGBoostModelProducer producer = injector.instanceOf(XGBoostModelProducer.class);
-            XGBoostModel model = producer.createXGBoostModel(modelName, featureExtractors, features,
+            XGBoostModel model = producer.createXGBoostModel(modelName, spaceMode,
+                    featureExtractors, features,
                     labelName, weightName);
             return model;
         }
@@ -102,12 +104,14 @@ public class XGBoostPredictorConfig implements PredictorConfig {
             XGBoostModel xgBoost = (XGBoostModel) model;
             LearningData learnData = PredictorUtilities.getLearningData(xgBoost, requestContext,
                     reqBody.get("learningDaoConfig"), daoConfigs,
-                    expandersConfig, injector, true, serializedKey, insName, labelName, weightName);
+                    expandersConfig, injector, true,
+                    serializedKey, insName, labelName, weightName, null);
             LearningData validData = null;
             if (reqBody.has("validationDaoConfig")) {
                 validData = PredictorUtilities.getLearningData(xgBoost, requestContext,
                         reqBody.get("validationDaoConfig"), daoConfigs,
-                        expandersConfig, injector, true, serializedKey, insName, labelName, weightName);
+                        expandersConfig, injector, true,
+                        serializedKey, insName, labelName, weightName, null);
             }
             method.learn(xgBoost, learnData, validData);
             return model;
