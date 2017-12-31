@@ -35,16 +35,13 @@ public class XGBoostPredictorConfig implements PredictorConfig {
     private final Injector injector;
     private final XGBoostMethod method;
     private final String daoConfigKey;
-    private final String serializedKey;
-    private final String insName;
     private final Configuration config;
 
     private XGBoostPredictorConfig(String modelName, List<FeatureExtractorConfig> feaExtConfigs,
                                    List<String> features, String labelName, String weightName,
                                    Configuration daoConfigs, List<Configuration> expandersConfig,
                                    Injector injector, XGBoostMethod method, String modelFile,
-                                   String daoConfigKey, String insName, String serializedKey,
-                                   Configuration config) {
+                                   String daoConfigKey, Configuration config) {
         this.modelName = modelName;
         this.feaExtConfigs = feaExtConfigs;
         this.features = features;
@@ -56,8 +53,6 @@ public class XGBoostPredictorConfig implements PredictorConfig {
         this.method = method;
         this.modelFile = modelFile;
         this.daoConfigKey = daoConfigKey;
-        this.serializedKey = serializedKey;
-        this.insName = insName;
         this.config = config;
     }
 
@@ -76,9 +71,7 @@ public class XGBoostPredictorConfig implements PredictorConfig {
                 predictorConfig.getString("weightName"), daoConfigs, expanders, injector,
                 new XGBoostMethod(predictorConfig.getConfig("methodConfig").asMap(), round),
                 predictorConfig.getString("modelFile"),
-                predictorConfig.getString("daoConfigKey"),
-                predictorConfig.getString("instanceName"),
-                predictorConfig.getString("serializedKey"), predictorConfig);
+                predictorConfig.getString("daoConfigKey"), predictorConfig);
     }
 
     private class XGBoostModelManager extends AbstractModelManager {
@@ -104,14 +97,12 @@ public class XGBoostPredictorConfig implements PredictorConfig {
             XGBoostModel xgBoost = (XGBoostModel) model;
             LearningData learnData = PredictorUtilities.getLearningData(xgBoost, requestContext,
                     reqBody.get("learningDaoConfig"), daoConfigs,
-                    expandersConfig, injector, true,
-                    serializedKey, insName, labelName, weightName, null);
+                    expandersConfig, injector, true, null);
             LearningData validData = null;
             if (reqBody.has("validationDaoConfig")) {
                 validData = PredictorUtilities.getLearningData(xgBoost, requestContext,
                         reqBody.get("validationDaoConfig"), daoConfigs,
-                        expandersConfig, injector, true,
-                        serializedKey, insName, labelName, weightName, null);
+                        expandersConfig, injector, true, null);
             }
             method.learn(xgBoost, learnData, validData);
             return model;

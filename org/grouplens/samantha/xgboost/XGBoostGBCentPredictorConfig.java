@@ -38,17 +38,12 @@ public class XGBoostGBCentPredictorConfig implements PredictorConfig {
     private final List<Configuration> expandersConfig;
     private final Configuration methodConfig;
     private final String daoConfigKey;
-    private final String serializedKey;
-    private final String insName;
-    private final String labelName;
-    private final String weightName;
 
     private XGBoostGBCentPredictorConfig(String modelName, String svdfeaModelName, String svdfeaPredictorName,
                                          List<String> treeFeatures, List<FeatureExtractorConfig> treeExtractorsConfig,
                                          Configuration daosConfig, List<Configuration> expandersConfig,
                                          Configuration methodConfig, Injector injector, String modelFile,
-                                         String daoConfigKey, String insName, String labelName,
-                                         String weightName, String serializedKey, Configuration config) {
+                                         String daoConfigKey, Configuration config) {
         this.daosConfig = daosConfig;
         this.expandersConfig = expandersConfig;
         this.modelName = modelName;
@@ -60,10 +55,6 @@ public class XGBoostGBCentPredictorConfig implements PredictorConfig {
         this.treeFeatures = treeFeatures;
         this.modelFile = modelFile;
         this.daoConfigKey = daoConfigKey;
-        this.labelName = labelName;
-        this.weightName = weightName;
-        this.serializedKey = serializedKey;
-        this.insName = insName;
         this.config = config;
     }
 
@@ -79,9 +70,7 @@ public class XGBoostGBCentPredictorConfig implements PredictorConfig {
                 predictorConfig.getString("svdfeaModelName"), predictorConfig.getString("svdfeaPredictorName"),
                 predictorConfig.getStringList("treeFeatures"), feaExtConfigs, daosConfig, expanders,
                 predictorConfig.getConfig("methodConfig"), injector, predictorConfig.getString("modelFile"),
-                predictorConfig.getString("daoConfigKey"), predictorConfig.getString("instanceName"),
-                predictorConfig.getString("labelName"), predictorConfig.getString("weightName"),
-                predictorConfig.getString("serializedKey"), predictorConfig);
+                predictorConfig.getString("daoConfigKey"), predictorConfig);
     }
 
     private class XGBoostGBCentModelManager extends AbstractModelManager {
@@ -111,13 +100,13 @@ public class XGBoostGBCentPredictorConfig implements PredictorConfig {
             JsonNode reqBody = requestContext.getRequestBody();
             XGBoostGBCent gbCent = (XGBoostGBCent) model;
             LearningData data = PredictorUtilities.getLearningData(gbCent, requestContext,
-                    reqBody.get("learningDaoConfig"), daosConfig, expandersConfig, injector, true,
-                    serializedKey, insName, labelName, weightName, null);
+                    reqBody.get("learningDaoConfig"), daosConfig, expandersConfig,
+                    injector, true, null);
             LearningData valid = null;
             if (reqBody.has("validationDaoConfig"))  {
                 valid = PredictorUtilities.getLearningData(gbCent, requestContext,
-                        reqBody.get("validationDaoConfig"), daosConfig, expandersConfig, injector, false,
-                        serializedKey, insName, labelName, weightName, null);
+                        reqBody.get("validationDaoConfig"), daosConfig, expandersConfig,
+                        injector, false, null);
             }
             LearningMethod method = PredictorUtilities.getLearningMethod(methodConfig, injector, requestContext);
             method.learn(gbCent, data, valid);
