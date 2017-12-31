@@ -3,7 +3,7 @@ package org.grouplens.samantha.xgboost;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.grouplens.samantha.modeler.common.LearningData;
 import org.grouplens.samantha.modeler.featurizer.FeatureExtractor;
-import org.grouplens.samantha.modeler.space.SpaceMode;
+import org.grouplens.samantha.modeler.model.SpaceMode;
 import org.grouplens.samantha.server.common.AbstractModelManager;
 import org.grouplens.samantha.server.common.ModelManager;
 import org.grouplens.samantha.server.config.ConfigKey;

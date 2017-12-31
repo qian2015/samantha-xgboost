@@ -6,7 +6,7 @@ import org.grouplens.samantha.modeler.common.LearningInstance;
 import org.grouplens.samantha.modeler.common.PredictiveModel;
 import org.grouplens.samantha.modeler.featurizer.Feature;
 import org.grouplens.samantha.modeler.featurizer.FeatureExtractor;
-import org.grouplens.samantha.modeler.space.IndexSpace;
+import org.grouplens.samantha.modeler.model.IndexSpace;
 import org.grouplens.samantha.modeler.svdfeature.SVDFeature;
 
 import java.util.List;

@@ -3,7 +3,7 @@ package org.grouplens.samantha.xgboost;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import ml.dmlc.xgboost4j.LabeledPoint;
 import org.grouplens.samantha.modeler.common.LearningInstance;
-import org.grouplens.samantha.modeler.featurizer.StandardLearningInstance;
+import org.grouplens.samantha.modeler.instance.StandardLearningInstance;
 
 public class XGBoostInstance implements LearningInstance {
 
