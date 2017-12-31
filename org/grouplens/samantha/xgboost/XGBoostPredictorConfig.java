@@ -97,12 +97,12 @@ public class XGBoostPredictorConfig implements PredictorConfig {
             XGBoostModel xgBoost = (XGBoostModel) model;
             LearningData learnData = PredictorUtilities.getLearningData(xgBoost, requestContext,
                     reqBody.get("learningDaoConfig"), daoConfigs,
-                    expandersConfig, injector, true, null);
+                    expandersConfig, injector, true, null, 128);
             LearningData validData = null;
             if (reqBody.has("validationDaoConfig")) {
                 validData = PredictorUtilities.getLearningData(xgBoost, requestContext,
                         reqBody.get("validationDaoConfig"), daoConfigs,
-                        expandersConfig, injector, true, null);
+                        expandersConfig, injector, true, null, 128);
             }
             method.learn(xgBoost, learnData, validData);
             return model;

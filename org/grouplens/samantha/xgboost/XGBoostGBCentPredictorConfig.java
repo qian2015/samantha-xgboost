@@ -101,12 +101,12 @@ public class XGBoostGBCentPredictorConfig implements PredictorConfig {
             XGBoostGBCent gbCent = (XGBoostGBCent) model;
             LearningData data = PredictorUtilities.getLearningData(gbCent, requestContext,
                     reqBody.get("learningDaoConfig"), daosConfig, expandersConfig,
-                    injector, true, null);
+                    injector, true, null, 128);
             LearningData valid = null;
             if (reqBody.has("validationDaoConfig"))  {
                 valid = PredictorUtilities.getLearningData(gbCent, requestContext,
                         reqBody.get("validationDaoConfig"), daosConfig, expandersConfig,
-                        injector, false, null);
+                        injector, false, null, 128);
             }
             LearningMethod method = PredictorUtilities.getLearningMethod(methodConfig, injector, requestContext);
             method.learn(gbCent, data, valid);
