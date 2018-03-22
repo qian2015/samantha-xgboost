@@ -111,7 +111,7 @@ public class XGBoostPredictorConfig implements PredictorConfig {
 
     public Predictor getPredictor(RequestContext requestContext) {
         ModelManager modelManager = new XGBoostModelManager(modelName, modelFile, injector);
-        XGBoostGBCent model = (XGBoostGBCent) modelManager.manage(requestContext);
+        XGBoostModel model = (XGBoostModel) modelManager.manage(requestContext);
         List<EntityExpander> entityExpanders = ExpanderUtilities.getEntityExpanders(requestContext,
                 expandersConfig, injector);
         return new PredictiveModelBasedPredictor(config, model, model,
