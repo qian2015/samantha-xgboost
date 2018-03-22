@@ -31,8 +31,8 @@ public class XGBoostModel implements PredictiveModel, Featurizer {
     }
 
     public double[] predict(LearningInstance ins) {
-        double[] preds = new double[1];
         if (booster == null) {
+            double[] preds = new double[1];
             preds[0] = 0.0;
             return preds;
         } else {
@@ -40,7 +40,11 @@ public class XGBoostModel implements PredictiveModel, Featurizer {
             list.add(((XGBoostInstance) ins).getLabeledPoint());
             try {
                 DMatrix data = new DMatrix(list.iterator(), null);
-                preds[0] = booster.predict(data)[0][0];
+                float[][] rawPreds = booster.predict(data);
+                double[] preds = new double[rawPreds[0].length];
+                for (int i=0; i<preds.length; i++) {
+                    preds[i] = rawPreds[0][i];
+                }
                 return preds;
             } catch (XGBoostError e) {
                 throw new BadRequestException(e);
