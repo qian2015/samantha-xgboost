@@ -69,13 +69,13 @@ public class XGBoostModel implements PredictiveModel, Featurizer {
         for (int i=0; i<instances.size(); i++) {
             int k = preds[i].length;
             for (int j = 0; j < k; j++) {
-                if (indexSpace.getKeyMapSize(ConfigKey.LABEL_INDEX_NAME.get()) > k) {
+                if (indexSpace.getKeyMapSize(ConfigKey.LABEL_INDEX_NAME.get()) > j) {
                     ObjectNode rec = Json.newObject();
                     rec.put("dataId", i);
                     String fea = (String) indexSpace.getKeyForIndex(
-                            ConfigKey.LABEL_INDEX_NAME.get(), k);
+                            ConfigKey.LABEL_INDEX_NAME.get(), j);
                     IOUtilities.parseEntityFromStringMap(rec, FeatureExtractorUtilities.decomposeKey(fea));
-                    rec.put("classProb", preds[i][k]);
+                    rec.put("classProb", preds[i][j]);
                     rankings.add(rec);
                 }
             }
