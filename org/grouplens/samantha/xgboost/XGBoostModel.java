@@ -1,6 +1,7 @@
 package org.grouplens.samantha.xgboost;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import ml.dmlc.xgboost4j.LabeledPoint;
 import ml.dmlc.xgboost4j.java.Booster;
 import ml.dmlc.xgboost4j.java.DMatrix;
@@ -8,11 +9,15 @@ import ml.dmlc.xgboost4j.java.XGBoostError;
 import org.grouplens.samantha.modeler.common.LearningInstance;
 import org.grouplens.samantha.modeler.common.PredictiveModel;
 import org.grouplens.samantha.modeler.featurizer.FeatureExtractor;
+import org.grouplens.samantha.modeler.featurizer.FeatureExtractorUtilities;
 import org.grouplens.samantha.modeler.featurizer.Featurizer;
 import org.grouplens.samantha.modeler.model.IndexSpace;
 import org.grouplens.samantha.modeler.featurizer.StandardFeaturizer;
 import org.grouplens.samantha.modeler.instance.StandardLearningInstance;
+import org.grouplens.samantha.server.config.ConfigKey;
 import org.grouplens.samantha.server.exception.BadRequestException;
+import org.grouplens.samantha.server.io.IOUtilities;
+import play.libs.Json;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -22,12 +27,14 @@ import java.util.List;
 
 public class XGBoostModel implements PredictiveModel, Featurizer {
     final private StandardFeaturizer featurizer;
+    final private IndexSpace indexSpace;
     private Booster booster;
 
     public XGBoostModel(IndexSpace indexSpace, List<FeatureExtractor> featureExtractors,
                         List<String> features, String labelName, String weightName) {
         this.featurizer = new StandardFeaturizer(indexSpace,
                 featureExtractors, features, null, labelName, weightName);
+        this.indexSpace = indexSpace;
     }
 
     public double[] predict(LearningInstance ins) {
@@ -50,6 +57,30 @@ public class XGBoostModel implements PredictiveModel, Featurizer {
                 throw new BadRequestException(e);
             }
         }
+    }
+
+    public List<ObjectNode> classify(List<ObjectNode> entities) {
+        List<LearningInstance> instances = new ArrayList<>();
+        for (JsonNode entity : entities) {
+            instances.add(featurize(entity, true));
+        }
+        double[][] preds = predict(instances);
+        List<ObjectNode> rankings = new ArrayList<>();
+        for (int i=0; i<instances.size(); i++) {
+            int k = preds[i].length;
+            for (int j = 0; j < k; j++) {
+                if (indexSpace.getKeyMapSize(ConfigKey.LABEL_INDEX_NAME.get()) > k) {
+                    ObjectNode rec = Json.newObject();
+                    rec.put("dataId", i);
+                    String fea = (String) indexSpace.getKeyForIndex(
+                            ConfigKey.LABEL_INDEX_NAME.get(), k);
+                    IOUtilities.parseEntityFromStringMap(rec, FeatureExtractorUtilities.decomposeKey(fea));
+                    rec.put("classProb", preds[i][k]);
+                    rankings.add(rec);
+                }
+            }
+        }
+        return rankings;
     }
 
     public LearningInstance featurize(JsonNode entity, boolean update) {
