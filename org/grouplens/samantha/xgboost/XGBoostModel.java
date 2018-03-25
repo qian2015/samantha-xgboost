@@ -84,7 +84,7 @@ public class XGBoostModel implements PredictiveModel, Featurizer {
     }
 
     public LearningInstance featurize(JsonNode entity, boolean update) {
-        return new XGBoostInstance((StandardLearningInstance) featurizer.featurize(entity, update));
+        return new XGBoostInstance((StandardLearningInstance) featurizer.featurize(entity, true));
     }
 
     public void setXGBooster(Booster booster) {
