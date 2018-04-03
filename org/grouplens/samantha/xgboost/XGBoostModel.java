@@ -14,6 +14,8 @@ import org.grouplens.samantha.modeler.featurizer.Featurizer;
 import org.grouplens.samantha.modeler.model.IndexSpace;
 import org.grouplens.samantha.modeler.featurizer.StandardFeaturizer;
 import org.grouplens.samantha.modeler.instance.StandardLearningInstance;
+import org.grouplens.samantha.modeler.tree.SortingUtilities;
+import org.grouplens.samantha.modeler.tree.TreeKey;
 import org.grouplens.samantha.server.config.ConfigKey;
 import org.grouplens.samantha.server.exception.BadRequestException;
 import org.grouplens.samantha.server.io.IOUtilities;
@@ -24,11 +26,13 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class XGBoostModel implements PredictiveModel, Featurizer {
     final private StandardFeaturizer featurizer;
     final private IndexSpace indexSpace;
     private Booster booster;
+    private List<JsonNode> featureScores;
 
     public XGBoostModel(IndexSpace indexSpace, List<FeatureExtractor> featureExtractors,
                         List<String> features, String labelName, String weightName) {
@@ -89,6 +93,27 @@ public class XGBoostModel implements PredictiveModel, Featurizer {
 
     public void setXGBooster(Booster booster) {
         this.booster = booster;
+        try {
+            Map<String, Integer> feaMap = booster.getFeatureScore(null);
+            featureScores = new ArrayList<>();
+            for (Map.Entry<String, Integer> entry : feaMap.entrySet()) {
+                ObjectNode feaImp = Json.newObject();
+                feaImp.put(
+                        "name",
+                        (String)indexSpace.getKeyForIndex(TreeKey.TREE.get(),
+                                Integer.parseInt(entry.getKey().substring(1))));
+                feaImp.put("importance", entry.getValue().intValue());
+                featureScores.add(feaImp);
+            }
+            featureScores.sort(SortingUtilities.jsonFieldReverseComparator("importance"));
+            String str = featureScores.toString();
+        } catch (XGBoostError e) {
+            throw new BadRequestException(e);
+        }
+    }
+
+    public List<JsonNode> getFeatureScores() {
+        return featureScores;
     }
 
     public void saveModel(String modelFile) {
