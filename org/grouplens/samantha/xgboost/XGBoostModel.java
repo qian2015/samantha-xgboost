@@ -19,6 +19,8 @@ import org.grouplens.samantha.modeler.tree.TreeKey;
 import org.grouplens.samantha.server.config.ConfigKey;
 import org.grouplens.samantha.server.exception.BadRequestException;
 import org.grouplens.samantha.server.io.IOUtilities;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import play.libs.Json;
 
 import java.io.FileInputStream;
@@ -29,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 public class XGBoostModel implements PredictiveModel, Featurizer {
+    private static Logger logger = LoggerFactory.getLogger(XGBoostModel.class);
     final private StandardFeaturizer featurizer;
     final private IndexSpace indexSpace;
     private Booster booster;
@@ -106,7 +109,7 @@ public class XGBoostModel implements PredictiveModel, Featurizer {
                 featureScores.add(feaImp);
             }
             featureScores.sort(SortingUtilities.jsonFieldReverseComparator("importance"));
-            String str = featureScores.toString();
+            logger.info("Feature importance: {}", featureScores.toString());
         } catch (XGBoostError e) {
             throw new BadRequestException(e);
         }
