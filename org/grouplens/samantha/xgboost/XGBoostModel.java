@@ -104,6 +104,7 @@ public class XGBoostModel implements PredictiveModel, Featurizer {
                         Integer.parseInt(entry.getKey().substring(1)));
                 featureScores.put(name, entry.getValue());
             }
+            logger.info("Number of non-zero importance features: {}", featureScores.size());
             logger.info("Feature importance: {}", Json.toJson(featureScores).toString());
         } catch (XGBoostError e) {
             throw new BadRequestException(e);
